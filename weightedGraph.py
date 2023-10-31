@@ -1,104 +1,98 @@
 import sys
 
-NO_PARENT = -1
+class ShortestPathFinder:
+    def __init__(self, district_names, adjacency_matrix, start_vertex):
+        # Initialize the class with district names, adjacency matrix, and start vertex, We will be starting from Mchinji
+        self.district_names = district_names
+        self.adjacency_matrix = adjacency_matrix
+        self.start_vertex = start_vertex
 
-def dijkstra(adjacency_matrix, start_vertex):
-	n_vertices = len(adjacency_matrix[0])
+        # when a vertex is not connected to any other vertex in the graph, there's no parent
+        self.NO_PARENT = -1
 
-	# shortest_distances[i] will hold the
-	# shortest distance from start_vertex to i
-	shortest_distances = [sys.maxsize] * n_vertices
+    # Use dijkstra's a;gorithm to find the shortest path for the weighted graph
+    def dijkstra(self):
+        number_of_vertices = len(self.adjacency_matrix[0])
 
-	# added[i] will true if vertex i is
-	# included in shortest path tree
-	# or shortest distance from start_vertex to 
-	# i is finalized
-	added = [False] * n_vertices
+        # Initialize distance and added arrays
+        shortest_distances = [sys.maxsize] * number_of_vertices
+        added = [False] * number_of_vertices
 
-	# Initialize all distances as 
-	# INFINITE and added[] as false
-	for vertex_index in range(n_vertices):
-		shortest_distances[vertex_index] = sys.maxsize
-		added[vertex_index] = False
-		
-	# Distance of source vertex from
-	# itself is always 0
-	shortest_distances[start_vertex] = 0
+        for vertex_index in range(number_of_vertices):
+            shortest_distances[vertex_index] = sys.maxsize
+            added[vertex_index] = False
 
-	# Parent array to store shortest
-	# path tree
-	parents = [-1] * n_vertices
+        # Set the distance from the start vertex to itself as 0
+        shortest_distances[self.start_vertex] = 0
 
-	# The starting vertex does not 
-	# have a parent
-	parents[start_vertex] = NO_PARENT
+        # Initialize parents array
+        parents = [-1] * number_of_vertices
+        parents[self.start_vertex] = self.NO_PARENT
 
-	# Find shortest path for all 
-	# vertices
-	for i in range(1, n_vertices):
-		# Pick the minimum distance vertex
-		# from the set of vertices not yet
-		# processed. nearest_vertex is 
-		# always equal to start_vertex in 
-		# first iteration.
-		nearest_vertex = -1
-		shortest_distance = sys.maxsize
-		for vertex_index in range(n_vertices):
-			if not added[vertex_index] and shortest_distances[vertex_index] < shortest_distance:
-				nearest_vertex = vertex_index
-				shortest_distance = shortest_distances[vertex_index]
+        for i in range(1, number_of_vertices):
+            nearest_vertex = -1
+            shortest_distance = sys.maxsize
 
-		# Mark the picked vertex as
-		# processed
-		added[nearest_vertex] = True
+            # Find the nearest vertex
+            for vertex_index in range(number_of_vertices):
+                if not added[vertex_index] and shortest_distances[vertex_index] < shortest_distance:
+                    nearest_vertex = vertex_index
+                    shortest_distance = shortest_distances[vertex_index]
 
-		# Update dist value of the
-		# adjacent vertices of the
-		# picked vertex.
-		for vertex_index in range(n_vertices):
-			edge_distance = adjacency_matrix[nearest_vertex][vertex_index]
-			
-			if edge_distance > 0 and shortest_distance + edge_distance < shortest_distances[vertex_index]:
-				parents[vertex_index] = nearest_vertex
-				shortest_distances[vertex_index] = shortest_distance + edge_distance
+            added[nearest_vertex] = True
 
-	print_solution(start_vertex, shortest_distances, parents)
+            # Update distances
+            for vertex_index in range(number_of_vertices):
+                edge_distance = self.adjacency_matrix[nearest_vertex][vertex_index]
 
+                if edge_distance > 0 and shortest_distance + edge_distance < shortest_distances[vertex_index]:
+                    parents[vertex_index] = nearest_vertex
+                    shortest_distances[vertex_index] = shortest_distance + edge_distance
 
-# A utility function to print 
-# the constructed distances
-# array and shortest paths
-def print_solution(start_vertex, distances, parents):
-	n_vertices = len(distances)
-	print("Vertex\t Distance\tPath")
-	
-	for vertex_index in range(n_vertices):
-		if vertex_index != start_vertex:
-			print("\n", start_vertex, "->", vertex_index, "\t\t", distances[vertex_index], "\t\t", end="")
-			print_path(vertex_index, parents)
+        return self._get_solution(shortest_distances, parents)
 
+    def _get_solution(self, distances, parents):
+        number_of_vertices = len(distances)
+        solution = []
 
-# Function to print shortest path
-# from source to current_vertex
-# using parents array
-def print_path(current_vertex, parents):
-	# Base case : Source node has
-	# been processed
-	if current_vertex == NO_PARENT:
-		return
-	print_path(parents[current_vertex], parents)
-	print(current_vertex, end=" ")
+        for vertex_index in range(number_of_vertices):
+            if vertex_index != self.start_vertex:
+                path = self._get_path(vertex_index, parents)
+                total_distance = distances[vertex_index]
+                solution.append((self.district_names[self.start_vertex], self.district_names[vertex_index], total_distance, path))
 
+        return solution
 
-# Driver code
+    def _get_path(self, current_vertex, parents):
+        path = []
+        self._get_recursive_path(current_vertex, parents, path)
+        return path
+
+    def _get_recursive_path(self, current_vertex, parents, path):
+        if current_vertex == self.NO_PARENT:
+            return
+        self._get_recursive_path(parents[current_vertex], parents, path)
+        path.append(self.district_names[current_vertex])
+
 if __name__ == '__main__':
-	adjacency_matrix = [[0, 4, 0, 0, 0, 0, 0, 8, 0],
-							[4, 0, 8, 0, 0, 0, 0, 11, 0],
-							[0, 8, 0, 7, 0, 4, 0, 0, 2],
-							[0, 0, 7, 0, 9, 14, 0, 0, 0],
-							[0, 0, 0, 9, 0, 10, 0, 0, 0],
-							[0, 0, 4, 14, 10, 0, 2, 0, 0],
-							[0, 0, 0, 0, 0, 2, 0, 1, 6],
-							[8, 11, 0, 0, 0, 0, 1, 0, 7],
-							[0, 0, 2, 0, 0, 0, 6, 7, 0]]
-	dijkstra(adjacency_matrix, 0)
+    district_names = ["Mchinji", "Lilongwe", "Kasungu", "Dedza", "Ntcheu", "Salima", "Dowa", "Ntchisi", "Nkhotakota"]
+
+    adjacency_matrix = [
+        [0, 109, 141, 0, 0, 0, 0, 0, 0],
+        [109, 0, 55, 92, 0, 0, 0, 0, 0],
+        [141, 55, 0, 0, 0, 0, 117, 66, 0],
+        [0, 92, 0, 0, 74, 96, 0, 0, 0],
+        [0, 0, 0, 74, 0, 0, 0, 0, 0],
+        [0, 0, 0, 96, 0, 0, 0, 67, 112],
+        [0, 0, 117, 0, 0, 0, 0, 38, 0],
+        [0, 0, 66, 0, 0, 67, 38, 0, 66],
+        [0, 0, 0, 0, 0, 112, 0, 66, 0]
+    ]
+
+    start_vertex = 0
+
+    shortest_path_finder = ShortestPathFinder(district_names, adjacency_matrix, start_vertex)
+    shortest_path_solution = shortest_path_finder.dijkstra()
+
+    for start, end, distance, path in shortest_path_solution:
+        print(f"{start} -> {end}\t Distance: {distance}\t Path: {' -> '.join(path)}")
